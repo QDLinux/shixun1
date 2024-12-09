@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+
+    <link type="text/css" href="css/style.css" rel="stylesheet" />
+    <script src="js/jquery-1.8.0.js"></script>
+    <script>
+        $(function(){
+
+            var uri=window.location.search;  //?s=1
+            var s=uri.split("=")[1];
+            if(s==1){
+                // alert("对不起，请先登录");
+                $("#msg").html("对不起，请先登录");
+            }
+            //登陆按钮
+            $("#but").click(function(){
+                var adminAccount=$("#adminAccount").val();
+                var password=$("#password").val();
+                var b=true;
+                if(adminAccount==""){
+                    $("#msg").html("账号不许为空！");
+                    b=false;
+                }
+                if(password==""){
+                    $("#msg").html("密码不许为空！");
+                    b=false;
+                }
+
+                if(b){
+                    //满足文本框要求，此时提交数据即可
+                    //window.location.href="main.html"; //前端跳转
+                    $.ajax({
+                        url:"login.do",
+                        type:"post",
+                        data:{
+                            adminAccount:adminAccount,
+                            password:password
+                        },
+                        success:function (data) {
+                            if(data == 0){
+                                $("#msg").html("账号不存在")
+                            }else if(data == 1){
+                                $("#msg").html("密码错误")
+                            }else if(data == 2){
+                                $("#msg").html("账号被管理员锁定")
+                            }else if(data == 3){
+                                window.location.href="main.html";
+                            }else if(data==4){
+                                $("#msg").html("密码错误次数上限，请明日再试")
+                            }
+
+                        }
+                    })
+                }
+            });
+
+        });
+    </script>
+</head>
+
+<body>
+
+<div id="login_wrapper">
+    <div><img src="images/1.jpg" width="100%" height="100%" alt="祡色背景图" /></div>
+    <div><img src="images/2.jpg" width="100%" height="100%" alt="蓝色背景图" /></div>
+    <div><img src="images/3.jpg" width="100%" height="100%" alt="淡黄色背景图" /></div>
+</div>
+<div id="Tz_Login">
+    <h3 id="title" class="move">用户登录</h3>
+    <div class="msg move" id="msg"></div>
+    <input type="text" placeholder="用户名" id="adminAccount" class="txt move" name="用户名" required autocomplete="off">
+    <input type="password" placeholder="密码" id="password" class="txt move" name="密码" required>
+    <input type="button" class="but move" value="登 录" id="but" /><Br>
+</div>
+<script src="./js/jquery-1.11.1.min.js"></script>
+<script src="./js/demo.js"></script>
+
+
+</body>
+
+</html>

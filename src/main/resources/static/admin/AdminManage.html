@@ -1,0 +1,262 @@
+﻿<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="renderer" content="webkit">
+<title></title>
+<link rel="stylesheet" href="../css/pintuer.css">
+<link rel="stylesheet" href="../css/admin.css">
+<script src="../js/jquery-1.8.0.js"></script>
+<link rel="stylesheet" href="../css/jquery.onoff.css" media="screen" />
+<script src="../js/jquery.onoff.min.js"></script>
+<script src="../js/global.js"></script>
+<script>
+	$(function(){
+
+        showData(1);
+		
+		//全选
+		var checked=false;
+		$("#checkall").click(function(){
+			checked=!checked;
+			$("input[type=checkbox][name=id]").attr("checked",checked);
+		});
+		
+		//批量删除
+		$("#delAdmins").click(function(){
+			if($("input[type=checkbox][name=id]:checked").length==0){
+				alert("至少选中一项！");
+				return;
+			}
+			var ids="";
+			$("input[type=checkbox][name=id]").each(function(){
+				if(this.checked){
+					ids+=this.value+",";
+				}
+			});
+			ids+="0";
+			// alert("执行 delete from t_admin where id in("+ids+") 即可");
+          $.ajax({
+            url:"../delAdmins.action",
+            type:"post",
+            data:{
+              ids:ids
+            },
+            success:function(data){
+              if(data==0){
+                alert("修改失败");
+              }else if(data>=1){
+                alert("修改成功");
+                var idArr = ids.split(",");
+                for (var i=0;i<idArr.length;i++) {
+                  $("#tr"+idArr[i]).remove();
+                }
+              }
+            }
+          });
+		});
+
+
+        //给分页按钮加事件
+        $("#start").click(function (){
+            showData(1);
+        });
+        $("#next").click(function (){
+            showData(parseInt($("#pageIndex").val())+1);
+        });
+        $("#pre").click(function (){
+            showData(parseInt($("#pageIndex").val())-1);
+        });
+        $("#end").click(function (){
+          showData(parseInt($("#pageCount").val()));
+        });
+
+
+      $("#jumpTo").click(function () {
+        jump();
+      });
+
+      $("#pageInput").on('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault(); // 防止回车后表单自动提交（如果存在表单的话）
+          jump();
+        }
+      })
+
+
+      function jump() {
+        if ($.isNumeric($("#pageInput").val()) && parseInt($("#pageInput").val()) >= 1 && parseInt($("#pageInput").val()) <= parseInt($("#pageCount").val())) {
+          showData(parseInt($("#pageInput").val()));
+          $("#pageInput").val("");
+        } else {
+          alert("您输入的页码格式不对，请重新输入 1 ~ "+($("#pageCount").val())+"以内的数字");
+          $("#pageInput").val("");
+        }
+      }
+    });
+
+
+    //
+    function showData(pageIndex){
+      //页面加载，查询所有数据
+      $.ajax({
+        url:"../searchAllAdmin.action",
+        type: "post",
+        dataType:"json",
+        data:{
+          pageIndex:pageIndex
+        },
+        success:function (data){
+          //清空数据
+          $("#t").empty();
+          $("#t").append("<tr>\n" +
+                  "      <th width=\"5%\">序号</th>\n" +
+                  "      <th width=\"25%\">账号</th>\n" +
+                  "      <th width=\"15%\">名字</th>\n" +
+                  "      <th width=\"20%\">锁定</th>\n" +
+                  "      <th width=\"35%\">操作</th>\n" +
+                  "    </tr>")
+
+          $.each(data.list,function (key,admin){
+            var str="<tr id='tr"+admin.id+"'>";
+            str+=
+                    "      <td><input type=\"checkbox\" name=\"id\" value='"+admin.id+"' />"+(key+1)+"</td>     \n" +
+                    "      <td>"+admin.adminAccount+"</td>     \n" +
+                    "      <td>"+admin.adminName+"</td>\n" +
+                    "      <td>\n" +
+                    "\t\t <input class=\"onoff\" value='"+admin.id+"' type=\"checkbox\" "+(admin.status==0?"":"checked")+" onclick=\"lockAdmin(this,'"+admin.adminName+"');\"/>\n" +
+                    "\t  </td>\n" +
+                    "      <td>\n" +
+                    "\t\t  <div class=\"button-group\">\n" +
+                    "\t\t  <a class=\"button border-main icon-search\" style=\"padding:3px 3px;\" href='AdminView.html?id="+admin.id+"'>详情</a>\n" +
+                    "\t\t  <a class=\"button border-main\" style=\"padding:3px 3px;\" href='AdminEdit.html?id="+admin.id+"'><span class=\"icon-edit\"></span> 修改</a>\n" +
+                    "\t\t  <a class=\"button border-main\"  style=\"padding:3px 3px;\" href=\"javascript:void(0)\" onclick=\"return del("+admin.id+");\"><span class=\"icon-trash-o\"></span> 删除</a>\n" +
+                    "\t\t  </div>\n" +
+                    "\t  </td>\n" +
+                    "    </tr>";
+            $("#t").append(str);
+          });
+          $("#pageIndex").val(data.pageNum);
+          $("#pageCount").val(data.pageSize);
+          $('.onoff').onoff(); //决定锁定复选框的样子
+          $("#nowPageIndex").html("当前为第 "+data.pageNum+" / "+data.pages+" 页");
+        }
+      })
+    }
+
+	//修改锁定状态
+	function lockAdmin(e,adminName){
+		// alert(e.checked);
+		var status=e.checked==true?"1":"0";
+		// alert(status);
+		//修改用户状态
+        $.ajax({
+            url:"../updateAdminStatus.action",
+            type:"post",
+            data:{
+                status:status,
+                id:e.value
+            },
+            success:function(data){
+                if(data==0){
+                    alert("修改失败");
+                }else if(data==1){
+                    // alert("修改成功");
+                    if(status==0){
+                      alert("已将账号"+adminName+"解除锁定");
+                    }
+                    else{
+                      alert("已将账号"+adminName+"锁定");
+                    }
+                }
+            }
+        });
+	}
+</script>
+</head>
+<body>
+<div class="panel admin-panel">
+  <div class="panel-head"><strong class="icon-reorder"> 内容列表</strong></div>
+  <div class="padding border-bottom"> 
+    <button type="button"  class="button border-green" id="checkall"><span class="icon-check"></span> 全选</button>
+    <button type="submit" class="button border-red" id="delAdmins"><span class="icon-trash-o"></span> 批量删除</button>
+	<button type="button" class="button border-yellow" onclick="window.location.href='AdminAdd.html'"><span class="icon-plus-square-o"></span> 添加用户</button>
+    <a href="javascript:void(0)" class="button border-blue icon-edit"> 升序</a>
+  </div>
+  <table class="table table-hover text-center" id="t">
+    <tr>
+      <th width="5%">序号</th>
+      <th width="25%">账号</th>
+      <th width="15%">名字</th>
+      <th width="20%">锁定</th>
+      <th width="35%">操作</th>
+    </tr>
+
+      <!--
+    <tr>
+      <td><input type="checkbox" name="id" value="1" />1</td>
+      <td>aaaaaa</td>
+      <td>张三</td>
+      <td>
+		 <input class="onoff" value="1" type="checkbox" checked onclick="lockAdmin(this);"/>
+	  </td>
+      <td>
+		  <div class="button-group">
+		  <a class="button border-main icon-search" style="padding:3px 3px;" href="AdminView.html?id=1">详情</a>
+		  <a class="button border-main" style="padding:3px 3px;" href="AdminEdit.html?id=1"><span class="icon-edit"></span> 修改</a>
+		  <a class="button border-main"  style="padding:3px 3px;" href="javascript:void(0)" onclick="return del(1);"><span class="icon-trash-o"></span> 删除</a>
+		  </div>
+	  </td>
+    </tr>
+     <tr>
+      <td><input type="checkbox" name="id" value="2" />2</td>
+      <td>bbbbbb</td>
+      <td>李四</td>
+      <td>
+		 <input class="onoff" value="2" type="checkbox" onclick="lockAdmin(this);"/>
+	  </td>
+      <td>
+		  <div class="button-group">
+		  <a class="button border-main icon-search" style="padding:3px 3px;" href="AdminView.html?id=2">详情</a>
+		  <a class="button border-main" style="padding:3px 3px;" href="AdminEdit.html?id=2"><span class="icon-edit"></span> 修改</a>
+		  <a class="button border-main"  style="padding:3px 3px;" href="javascript:void(0)" onclick="return del(2)"><span class="icon-trash-o"></span> 删除</a>
+		  </div>
+	  </td>
+    </tr>
+    -->
+  </table>
+</div>
+<script type="text/javascript">
+function del(id){
+	if(confirm("您确定要删除吗?")){
+      $.ajax({
+        url:"../delAdminById.action",
+        type:"post",
+        data:{
+          id:id
+        },
+        success:function(data){
+          if(data==1){
+            alert("删除成功");
+            $("#tr"+id).remove();
+          }else if(data==0){
+            alert("删除失败");
+          }
+        }
+      });
+	}
+}
+</script>
+<input type="hidden" id="pageIndex" />
+<input type="hidden" id="pageCount" />
+  <div class="pagelist">
+    <a href="javascript:void(0);" id="start">首页</a><a href="javascript:void(0);" id="pre">上一页</a><a href="javascript:void(0);" id="next">下一页</a><a href="javascript:void(0);" id="end">尾页</a>
+    <br>
+    <span id="nowPageIndex"></span>
+    <input type="text" id="pageInput" placeholder="页码" style="width:50px; margin-left:10px;" >
+    <a href="javascript:void(0);" id="jumpTo">跳转</a>
+  </div>
+
+</body></html>

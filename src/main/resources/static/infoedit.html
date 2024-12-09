@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="renderer" content="webkit">
+    <title>基本信息</title>  
+    <link rel="stylesheet" href="css/pintuer.css">
+    <link rel="stylesheet" href="css/admin.css">
+	<script src="js/My97DatePicker/WdatePicker.js"></script>
+    <script src="js/jquery-1.8.0.js"></script>
+	<script src="js/imageutil.js"></script>
+	<script src="js/global.js"></script>
+	<script>
+	$(function(){
+		
+		//页面加载之后，查询当前登陆者信息
+		$.ajax({
+			url:"getCurrentInfo.action",
+			type:"post",
+			dataType:"json",
+			success:function(admin){
+				$("#adminAccount").val(admin.adminAccount);
+				$("#adminName").val(admin.adminName);
+				$("#preview").attr("src",admin.fileName);
+				$("#preview").css("width","50px").css("height","50px");
+				$("#mail").val(admin.mail);
+				$("#phoneNo").val(admin.phoneNo);
+				$("#birthday").val(admin.birthday);
+				$("#createTime").val(admin.createTime);
+				$("#address").val(admin.address);
+				
+				$("#fileName").val(admin.fileName);
+				$("#id").val(admin.id);
+			}
+		});
+		
+		//提交按钮
+		$("#but").click(function(){
+			var adminName=$("#adminName").val();
+			var b=true;
+			if(adminName==""){
+				$("#adminNameMsg").html("必填项！");
+				b=false;
+			}
+			
+			if(b){  
+				//满足条件，提交数据即可，此时可以利用表单携带参数
+				
+				//先判断文件域是否为空
+				if($("#picture").val()!=""){
+					var formData=new FormData($("#form1")[0]);
+					$.ajax({
+					  url:"fileUpload.action",
+					  type:"post",
+					  data:formData,
+					  async:false,
+					  processData:false,  //是否把参数变成字符串，默认为true，代表变成
+					  contentType:false,   //相当于指定 enctype="multipart/form-data"，默认为true application/x-www-form-urlencoded
+					  success:function(data){
+						  $("#fileName").val(data);
+					  }
+					});
+				}
+				
+				//在修改其他普通文本数据
+				$.ajax({
+                    url:"updateCurrentAdmin.action",
+				  type:"post",
+				  data:$("#form1").serialize(),  //利用表单携带参数，但不提交请求
+				  success:function(data){
+                      if(data==1){
+                        alert("修改成功");
+                        window.top.location.reload(); //让最外层刷新，目的是让头像刷新显示
+                      }else if (data==0){
+                        alert("修改失败");
+                      }
+
+					  //window.top.location.reload(); 让最外层刷新，目的是让头像刷新显示
+				  }
+				});
+			}
+		});
+		
+	});
+</script>
+</head>
+<body>
+<div class="panel admin-panel">
+  <div class="panel-head"><strong><span class="icon-pencil-square-o"></span>基本信息</strong></div>
+  <form id="form1"> <!--将来利用表单携带参数，此时input组件的name值必须和实体类属性相同-->
+  <div class="body-content">
+  <input type="hidden" name="id" id="id"/><!--隐藏admin id 做修改用途-->
+  <input type="hidden" name="fileName" id="fileName"/><!--隐藏头像图片名称-->
+    <div class="form-x">
+      <div class="form-group">
+        <div class="label">
+          <label>账号：</label>
+        </div>
+        <div class="field">
+          <input type="text" style="width:25%;" id="adminAccount" name="adminAccount" readonly class="input"  value="" />
+          <!--<div class="tips" id="adminAccountMsg">*</div>-->
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="label">
+          <label>姓名：</label>
+        </div>
+        <div class="field">
+          <input type="text" style="width:25%;" id="adminName" class="input" name="adminName" value="" />
+          <div class="tips" id="adminNameMsg">*</div>
+        </div>
+      </div>
+	  <div class="form-group">
+        <div class="label">
+          <label>头像：</label>
+        </div>
+        <div class="field">
+          <input type="file" name="picture"  id="picture" size="28" class="input tips" onchange="setImagePreview(this,localImag,preview,'50px','50px');" style="width:25%; float:left;"/>
+		  <div id="localImag" style="margin-left: 24px" ></div>
+		  <img id="preview" alt="请上传照片" style="margin-left: 15px"  />
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="label">
+          <label>邮箱：</label>
+        </div>
+        <div class="field">
+          <input type="text" style="width:25%;" id="mail" class="input" name="mail" value="" />
+        </div>
+      </div>
+	  <div class="form-group">
+        <div class="label">
+          <label>手机：</label>
+        </div>
+        <div class="field">
+          <input type="text" style="width:25%;" id="phoneNo" class="input" name="phoneNo" value="" />
+        </div>
+      </div>
+	  <div class="form-group">
+        <div class="label">
+          <label>出生日期：</label>
+        </div>
+        <div class="field">
+          <input type="text" style="width:25%;" id="birthday" class="input" autocomplete="off" name="birthday" onclick="WdatePicker({dateFmt:'yyyy-MM-dd'})" value='' />
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="label">
+          <label>地址：</label>
+        </div>
+        <div class="field">
+          <input type="text" class="input" id="address" name="address" value="" />
+        </div>
+      </div>  
+      <div class="form-group">
+        <div class="label">
+          <label></label>
+        </div>
+        <div class="field">
+          <button class="button bg-main icon-check-square-o" id="but" type="button"> 提交</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </form>
+</div>
+</body></html>

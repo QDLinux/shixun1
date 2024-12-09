@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.example.mapper.AdminMapper">
+    <select id="getAdminByAdminAccount" resultType="Admin">
+        select * from t_admin where adminAccount = #{adminAccount}
+    </select>
+
+    <insert id="addAdmin">
+        insert into t_admin(adminAccount,adminName,password,mail,phoneNo,birthday,createTime,address,status,errorCount)
+        values (#{adminAccount},#{adminName},#{password},#{mail},#{phoneNo},#{birthday},now(),#{address},0,0)
+    </insert>
+
+    <select id="getCurrentInfo" resultType="admin">
+        select * from t_admin where id=#{id}
+    </select>
+
+    <update id="updateCurrentAdmin">
+        update t_admin set adminName=#{adminName},mail=#{mail},phoneNo=#{phoneNo},birthday=#{birthday}
+                         ,address=#{address},fileName=#{fileName} where id=#{id}
+    </update>
+
+    <select id="searchAllAdmin" resultType="admin">
+        select * from t_admin
+    </select>
+</mapper>
